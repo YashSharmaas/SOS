@@ -17,24 +17,43 @@ import com.google.android.gms.nearby.connection.PayloadCallback
 import com.google.android.gms.nearby.connection.PayloadTransferUpdate
 import com.google.android.gms.nearby.connection.Strategy
 import com.google.gson.Gson
+import android.net.ConnectivityManager
+import android.net.Network
+import android.net.NetworkCapabilities
+
 
 class MeshManager(
-    context: Context,
+    private val context: Context,
     private val log: (String) -> Unit
 ) {
 
     private val client = Nearby.getConnectionsClient(context)
     private val SERVICE_ID = "EMERGENCY_MESH_V1"
-
     private val peers = mutableSetOf<String>()
-    private val seenPackets = mutableSetOf<String>()
+    private val seenPackets = mutableMapOf<String, Long>() // id -> expiredAt
+    private val pendingPackets = mutableMapOf<String, Packet>() // id -> packet
+    private val ackedPackets = mutableSetOf<String>() // SOS ids already ACKed
 
     private val endpointName =
         "${Build.MANUFACTURER}-${Build.MODEL}".take(20)
 
+    private val connectivityManager =
+        context.getSystemService(Context.CONNECTIVITY_SERVICE)
+                as ConnectivityManager
+
+    private val networkCallback = object : ConnectivityManager.NetworkCallback() {
+        override fun onAvailable(network: Network) {
+            log("🌐 Internet available")
+            handler.post { evaluateSystemState() }
+        }
+    }
+
     fun start() {
         startAdvertising()
         startDiscovery()
+        handler.post(rebroadcastTask)
+        handler.post(cleanupTask)
+        connectivityManager.registerDefaultNetworkCallback(networkCallback)
         log("Mesh started")
     }
 
@@ -102,32 +121,31 @@ class MeshManager(
             val bytes = payload.asBytes() ?: return
             val packet = Gson().fromJson(String(bytes), Packet::class.java)
 
-            // ACK receive
+            val now = System.currentTimeMillis()
+
+            if (now > packet.expiredAt) return
+            if (seenPackets.containsKey(packet.id)) return
+
+            seenPackets[packet.id] = packet.expiredAt
+
             if (packet.isAck) {
-                log("✅ ACK RECEIVED for packet ${packet.targetPacketId}")
+                pendingPackets.remove(packet.targetPacketId)
+
+                if (packet.originalSenderId == endpointName) {
+                    log("🎯 ORIGIN RECEIVED ACK — SOS SUCCESS")
+                    pendingPackets.remove(packet.id)
+                } else {
+                    pendingPackets[packet.id] = packet
+                }
                 return
             }
 
-            // Loop protection
-            if (seenPackets.contains(packet.id)) return
-            seenPackets.add(packet.id)
 
-            log("[RECEIVED] ${packet.message} TTL=${packet.ttl}")
+            pendingPackets[packet.id] = packet   // ✅ STORE
 
-            //REVEAL CONDITION (2 devices case)
-            if (packet.sourceDevice != endpointName) {
-                log("🚨 SOS REVEALED on THIS DEVICE")
-                sendAck(packet) // IMPORTANT
-            }
-
-            if (packet.ttl <= 0) {
-                log("[DROP] TTL expired")
-                return
-            }
-
-            packet.ttl--
-            forward(packet)
+            log("[RECEIVED] ${packet.message}")
         }
+
 
         override fun onPayloadTransferUpdate(
             id: String,
@@ -135,12 +153,74 @@ class MeshManager(
         ) {}
     }
 
-    // Activity calls THIS
     fun send(packet: Packet) {
-        if (seenPackets.contains(packet.id)) return
-        seenPackets.add(packet.id)
-        forward(packet)
+        val now = System.currentTimeMillis()
+        if (now > packet.expiredAt) return
+        if (seenPackets.containsKey(packet.id)) return
+
+        seenPackets[packet.id] = packet.expiredAt
+        pendingPackets[packet.id] = packet
+
+        // 🔑 Trigger immediate evaluation
+        handler.post { evaluateSystemState() }
     }
+
+    private fun isGateway(): Boolean {
+        val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE)
+                as ConnectivityManager
+
+        val network = cm.activeNetwork ?: return false
+        val caps = cm.getNetworkCapabilities(network) ?: return false
+
+        return caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+    }
+
+    private fun evaluateSystemState() {
+        val now = System.currentTimeMillis()
+
+        // 1. Drop expired packets
+        pendingPackets.entries.removeIf { now > it.value.expiredAt }
+
+        // 2. If not a gateway, nothing else to do
+        if (!isGateway()) return
+
+        // 3. Deliver all undelivered SOS packets
+        pendingPackets.values
+            .filter { !it.isAck }
+            .toList()
+            .forEach { sos ->
+                if (ackedPackets.contains(sos.id)) return@forEach
+
+                log("🌐 GATEWAY delivering ${sos.id}")
+
+                // deliverToInternet(sos)
+
+                createAndStoreAck(sos)
+                ackedPackets.add(sos.id)
+                pendingPackets.remove(sos.id)
+            }
+    }
+
+    private fun createAndStoreAck(sos: Packet) {
+        val now = System.currentTimeMillis()
+
+        val ack = Packet(
+            message = "ACK",
+            priority = 0,
+            expiredAt = now + 60_000L,
+            lat = null,
+            lng = null,
+            sourceDevice = endpointName,            // THIS node
+            originalSenderId = sos.sourceDevice,    // SOS origin
+            sourceTimeMillis = now,
+            isAck = true,
+            targetPacketId = sos.id
+        )
+
+        seenPackets[ack.id] = ack.expiredAt
+        pendingPackets[ack.id] = ack
+    }
+
 
     private fun forward(packet: Packet) {
         val bytes = Gson().toJson(packet).toByteArray()
@@ -150,27 +230,33 @@ class MeshManager(
             client.sendPayload(it, payload)
         }
 
-        log("[FORWARD] TTL=${packet.ttl}")
+        log("[FORWARD] ${packet.isAck}")
     }
 
-    private fun sendAck(original: Packet) {
-        val ack = Packet(
-            message = "ACK",
-            priority = 3,
-            ttl = 2,
 
-            lat = null,
-            lng = null,
+    private val handler = Handler(Looper.getMainLooper())
 
-            sourceDevice = endpointName,
-            sourceTimeMillis = System.currentTimeMillis(),
+    private val rebroadcastTask = object : Runnable {
+        override fun run() {
+            pendingPackets.values.forEach { forward(it) }
+            evaluateSystemState()
+            handler.postDelayed(this, 10_000L)
+        }
+    }
 
-            isAck = true,
-            targetPacketId = original.id
-        )
 
-        forward(ack)
-        log("📩 ACK sent for ${original.id}")
+    private val cleanupTask = object : Runnable {
+        override fun run() {
+            val now = System.currentTimeMillis()
+            seenPackets.entries.removeIf { now > it.value }
+            handler.postDelayed(this, 60_000L)
+        }
+    }
+
+    fun stop() {
+        try {
+            connectivityManager.unregisterNetworkCallback(networkCallback)
+        } catch (e: Exception) { }
     }
 
 }

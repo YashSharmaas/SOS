@@ -64,6 +64,7 @@ class MainActivity : AppCompatActivity() {
             meshManager.send(packet)
 
             logView.append("\n[SENT] SOS")
+
         }
 
         btnLow.setOnClickListener {
@@ -76,22 +77,29 @@ class MainActivity : AppCompatActivity() {
 
             logView.append("\n[SENT] LOW")
         }
+    }
 
-
+    fun ttlForPriority(priority: Int): Long {
+        return when (priority) {
+            0 -> 10 * 60 * 1000L   // 10 min (SOS)
+            1 -> 5 * 60 * 1000L    // 5 min
+            else -> 2 * 60 * 1000L // 2 min
+        }
     }
 
     fun createSOSPacket(
         lat: Double?,
         lng: Double?
-    ): Packet {
+    ) : Packet {
+        var time = System.currentTimeMillis()
         return Packet(
             type = PacketType.SOS,
             message = "SOS EMERGENCY",
-            priority = 2,
-            ttl = 2,
+            priority = 0,
+            expiredAt = time + ttlForPriority(0),
             lat = lat,
             lng = lng,
-            sourceTimeMillis = System.currentTimeMillis()
+            sourceTimeMillis = time
         )
     }
 
@@ -201,5 +209,9 @@ class MainActivity : AppCompatActivity() {
             }
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        meshManager.stop()
+    }
 
 }
