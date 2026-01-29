@@ -15,8 +15,8 @@ data class Packet(
 
     val priority: Int,
 
-    val lat: Double?,         // nullable (GPS off case)
-    val lng: Double?,
+    val lat: Double? = null,         // nullable (GPS off case)
+    val lng: Double? = null,
 
     val sourceDevice: String = "${Build.MANUFACTURER}-${Build.MODEL}",
     val sourceTimeMillis: Long,

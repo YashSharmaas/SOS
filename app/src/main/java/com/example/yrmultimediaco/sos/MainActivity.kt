@@ -68,10 +68,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         btnLow.setOnClickListener {
-            val packet = createSOSPacket(
-                lat = currentLat,
-                lng = currentLng
-            )
+            val packet = createLOWPacket()
 
             meshManager.send(packet)
 
@@ -79,26 +76,29 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    fun ttlForPriority(priority: Int): Long {
-        return when (priority) {
-            0 -> 10 * 60 * 1000L   // 10 min (SOS)
-            1 -> 5 * 60 * 1000L    // 5 min
-            else -> 2 * 60 * 1000L // 2 min
-        }
-    }
-
     fun createSOSPacket(
         lat: Double?,
         lng: Double?
     ) : Packet {
-        var time = System.currentTimeMillis()
+        val time = System.currentTimeMillis()
         return Packet(
             type = PacketType.SOS,
             message = "SOS EMERGENCY",
-            priority = 0,
-            expiredAt = time + ttlForPriority(0),
+            priority = Priority.SOS,
+            expiredAt = time + util.ttlForPriority(Priority.SOS),
             lat = lat,
             lng = lng,
+            sourceTimeMillis = time
+        )
+    }
+
+    fun createLOWPacket() : Packet {
+        val time = System.currentTimeMillis()
+        return Packet(
+            type = PacketType.LOW_STATUS,
+            message = "LOW",
+            priority = Priority.LOW,
+            expiredAt = time + util.ttlForPriority(Priority.LOW),
             sourceTimeMillis = time
         )
     }
@@ -175,6 +175,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     lateinit var meshManager: MeshManager
+    lateinit var util: Util
     lateinit var logView: TextView
 
     private fun startMesh() {
