@@ -14,7 +14,6 @@ data class Packet(
     val message: String,
 
     val priority: Int,
-    var ttl: Int,             // hop count
 
     val lat: Double?,         // nullable (GPS off case)
     val lng: Double?,
@@ -27,8 +26,12 @@ data class Packet(
         Locale.US
     ).format(Date()),
 
+    val expiredAt: Long,
+
     val isAck: Boolean = false,
-    val targetPacketId: String? = null
+    val targetPacketId: String? = null,
+
+    val originalSenderId: String? = null
 )
 
 
