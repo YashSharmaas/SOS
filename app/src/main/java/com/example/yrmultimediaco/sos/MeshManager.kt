@@ -20,6 +20,7 @@ import com.google.gson.Gson
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
+import java.util.PriorityQueue
 
 
 class MeshManager(
@@ -29,11 +30,16 @@ class MeshManager(
 
     private val client = Nearby.getConnectionsClient(context)
     private val SERVICE_ID = "EMERGENCY_MESH_V1"
+    private val MAX_PACKETS_PER_ROUND = 5
     private val peers = mutableSetOf<String>()
     private val seenPackets = mutableMapOf<String, Long>() // id -> expiredAt
     private val pendingPackets = mutableMapOf<String, Packet>() // id -> packet
     private val ackedPackets = mutableSetOf<String>() // SOS ids already ACKed
-
+    private val sendQueue = PriorityQueue<Packet>(
+        compareBy<Packet> { it.priority }
+            .thenBy { it.sourceTimeMillis }
+    )
+    private val util: Util = Util()
     private val endpointName =
         "${Build.MANUFACTURER}-${Build.MODEL}".take(20)
 
@@ -136,12 +142,16 @@ class MeshManager(
                     pendingPackets.remove(packet.id)
                 } else {
                     pendingPackets[packet.id] = packet
+                    sendQueue.offer(packet)
                 }
                 return
             }
 
+            pendingPackets[packet.id] = packet
+            sendQueue.offer(packet)
+            enforceQueueLimit()
 
-            pendingPackets[packet.id] = packet   // ✅ STORE
+            handler.post { evaluateSystemState() }
 
             log("[RECEIVED] ${packet.message}")
         }
@@ -161,8 +171,9 @@ class MeshManager(
         seenPackets[packet.id] = packet.expiredAt
         pendingPackets[packet.id] = packet
 
-        // 🔑 Trigger immediate evaluation
         handler.post { evaluateSystemState() }
+        sendQueue.offer(packet)
+        enforceQueueLimit()
     }
 
     private fun isGateway(): Boolean {
@@ -186,7 +197,7 @@ class MeshManager(
 
         // 3. Deliver all undelivered SOS packets
         pendingPackets.values
-            .filter { !it.isAck }
+            .filter { it.priority == Priority.SOS }
             .toList()
             .forEach { sos ->
                 if (ackedPackets.contains(sos.id)) return@forEach
@@ -206,12 +217,10 @@ class MeshManager(
 
         val ack = Packet(
             message = "ACK",
-            priority = 0,
-            expiredAt = now + 60_000L,
-            lat = null,
-            lng = null,
-            sourceDevice = endpointName,            // THIS node
-            originalSenderId = sos.sourceDevice,    // SOS origin
+            priority = Priority.ACK,
+            expiredAt = now + util.ttlForPriority(Priority.ACK),
+            sourceDevice = endpointName,
+            originalSenderId = sos.sourceDevice,
             sourceTimeMillis = now,
             isAck = true,
             targetPacketId = sos.id
@@ -219,8 +228,8 @@ class MeshManager(
 
         seenPackets[ack.id] = ack.expiredAt
         pendingPackets[ack.id] = ack
+        sendQueue.offer(ack)
     }
-
 
     private fun forward(packet: Packet) {
         val bytes = Gson().toJson(packet).toByteArray()
@@ -233,17 +242,66 @@ class MeshManager(
         log("[FORWARD] ${packet.isAck}")
     }
 
+    private fun enforceQueueLimit() {
+        val MAX_QUEUE_SIZE = 50
+        if (sendQueue.size <= MAX_QUEUE_SIZE) return
+
+        val iterator = sendQueue.iterator()
+        while (sendQueue.size > MAX_QUEUE_SIZE && iterator.hasNext()) {
+            val pkt = iterator.next()
+            if (pkt.priority == Priority.LOW) {
+                iterator.remove()
+                pendingPackets.remove(pkt.id)
+                log("🗑️ Dropped LOW priority packet ${pkt.id}")
+            }
+        }
+    }
 
     private val handler = Handler(Looper.getMainLooper())
 
     private val rebroadcastTask = object : Runnable {
         override fun run() {
-            pendingPackets.values.forEach { forward(it) }
+            val now = System.currentTimeMillis()
+            val toSend = mutableListOf<Packet>()
+
+            // 1️⃣ Pull highest priority packets first
+            while (sendQueue.isNotEmpty() && toSend.size < MAX_PACKETS_PER_ROUND) {
+                val pkt = sendQueue.poll()
+
+                if (!pendingPackets.containsKey(pkt.id)) continue
+                if (now > pkt.expiredAt) {
+                    pendingPackets.remove(pkt.id)
+                    continue
+                }
+
+                toSend.add(pkt)
+            }
+
+            // 2️⃣ Send them
+            toSend.forEach { forward(it) }
+
+            // 3️⃣ Reinsert for epidemic rebroadcast
+            toSend.forEach { sendQueue.offer(it) }
+
+            // 4️⃣ Evaluate gateway after sending
             evaluateSystemState()
-            handler.postDelayed(this, 10_000L)
+
+            handler.postDelayed(this, nextRebroadcastDelay())
         }
     }
 
+    private fun nextRebroadcastDelay(): Long {
+        if (pendingPackets.isEmpty()) return 60_000L
+
+        val now = System.currentTimeMillis()
+        val youngest = pendingPackets.values.minOf { now - it.sourceTimeMillis }
+
+        return when {
+            youngest < 60_000L -> 10_000L
+            youngest < 5 * 60_000L -> 30_000L
+            else -> 60_000L
+        }
+    }
 
     private val cleanupTask = object : Runnable {
         override fun run() {
