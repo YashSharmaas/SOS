@@ -32,6 +32,7 @@ class MeshManager(
     private val SERVICE_ID = "EMERGENCY_MESH_V1"
     private val MAX_PACKETS_PER_ROUND = 5
     private val peers = mutableSetOf<String>()
+    private var running = false
     private val seenPackets = mutableMapOf<String, Long>() // id -> expiredAt
     private val pendingPackets = mutableMapOf<String, Packet>() // id -> packet
     private val ackedPackets = mutableSetOf<String>() // SOS ids already ACKed
@@ -60,7 +61,16 @@ class MeshManager(
         handler.post(rebroadcastTask)
         handler.post(cleanupTask)
         connectivityManager.registerDefaultNetworkCallback(networkCallback)
+        running = true
         log("Mesh started")
+    }
+
+    fun connectedCount(): Int {
+        return peers.size;
+    }
+
+    fun isRunning(): Boolean {
+        return running;
     }
 
     private fun startAdvertising() {
@@ -78,7 +88,6 @@ class MeshManager(
 
     private fun startDiscovery() {
         log("Starting discovery...")
-
         client.startDiscovery(
             SERVICE_ID,
             discoveryCallback,
@@ -177,7 +186,7 @@ class MeshManager(
         enforceQueueLimit()
     }
 
-    private fun isGateway(): Boolean {
+    public fun isGateway(): Boolean {
         val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE)
                 as ConnectivityManager
 
@@ -265,7 +274,7 @@ class MeshManager(
             val now = System.currentTimeMillis()
             val toSend = mutableListOf<Packet>()
 
-            // 1️⃣ Pull highest priority packets first
+            // Pull highest priority packets first
             while (sendQueue.isNotEmpty() && toSend.size < MAX_PACKETS_PER_ROUND) {
                 val pkt = sendQueue.poll()
 
@@ -278,13 +287,13 @@ class MeshManager(
                 toSend.add(pkt)
             }
 
-            // 2️⃣ Send them
+            // Send them
             toSend.forEach { forward(it) }
 
-            // 3️⃣ Reinsert for epidemic rebroadcast
+            // Reinsert for epidemic rebroadcast
             toSend.forEach { sendQueue.offer(it) }
 
-            // 4️⃣ Evaluate gateway after sending
+            // Evaluate gateway after sending
             evaluateSystemState()
 
             handler.postDelayed(this, nextRebroadcastDelay())
@@ -315,6 +324,7 @@ class MeshManager(
     fun stop() {
         try {
             connectivityManager.unregisterNetworkCallback(networkCallback)
+            running = false
         } catch (e: Exception) { }
     }
 

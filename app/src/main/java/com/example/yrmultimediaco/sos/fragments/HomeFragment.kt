@@ -1,60 +1,73 @@
 package com.example.yrmultimediaco.sos.fragments
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
+import android.provider.Settings
+import android.widget.Button
+import android.widget.TextView
+import com.example.yrmultimediaco.sos.MainActivity
 import com.example.yrmultimediaco.sos.R
+import com.example.yrmultimediaco.sos.viewModels.HomeViewModel
 
-// TODO: Rename parameter arguments, choose names that match
-// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-private const val ARG_PARAM1 = "param1"
-private const val ARG_PARAM2 = "param2"
+class HomeFragment : Fragment(R.layout.fragment_home) {
 
-/**
- * A simple [Fragment] subclass.
- * Use the [HomeFragment.newInstance] factory method to
- * create an instance of this fragment.
- */
-class HomeFragment : Fragment() {
-    // TODO: Rename and change types of parameters
-    private var param1: String? = null
-    private var param2: String? = null
+    private lateinit var vm: HomeViewModel
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        arguments?.let {
-            param1 = it.getString(ARG_PARAM1)
-            param2 = it.getString(ARG_PARAM2)
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        val mesh = (requireActivity() as MainActivity).meshManager
+
+        vm = HomeViewModel(requireContext(), mesh)
+
+        val txtBluetooth = view.findViewById<TextView>(R.id.txtBluetooth)
+        val txtMesh = view.findViewById<TextView>(R.id.txtMesh)
+        val txtEndpoints = view.findViewById<TextView>(R.id.txtEndpoints)
+        val txtGateway = view.findViewById<TextView>(R.id.txtGateway)
+        val txtInternet = view.findViewById<TextView>(R.id.txtInternet)
+        val txtBattery = view.findViewById<TextView>(R.id.txtBattery)
+
+        vm.bluetoothOn.observe(viewLifecycleOwner) {
+            txtBluetooth.text =
+                "Bluetooth: " + if (it) "🟢 ON" else "🔴 OFF"
         }
+
+        vm.meshRunning.observe(viewLifecycleOwner) {
+            txtMesh.text =
+                "Mesh: " + if (it) "🟢 ACTIVE" else "🔴 STOPPED"
+        }
+
+        vm.endpointCount.observe(viewLifecycleOwner) {
+            txtEndpoints.text = "Endpoints: $it"
+        }
+
+        vm.gatewayMode.observe(viewLifecycleOwner) {
+            txtGateway.text =
+                if (it) "Gateway: 🌐 ENABLED"
+                else "Gateway: Relay Only"
+        }
+
+        vm.internetAvailable.observe(viewLifecycleOwner) {
+            txtInternet.text =
+                if (it) "Internet: 🟢 Available"
+                else "Internet: 🔴 Offline"
+        }
+
+        vm.batteryPercent.observe(viewLifecycleOwner) {
+            txtBattery.text =
+                "Battery: $it% " + batteryLabel(it)
+        }
+
+        vm.refreshAll()
     }
 
-    override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
-        // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_home, container, false)
-    }
-
-    companion object {
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         *
-         * @param param1 Parameter 1.
-         * @param param2 Parameter 2.
-         * @return A new instance of fragment HomeFragment.
-         */
-        // TODO: Rename and change types and number of parameters
-        @JvmStatic
-        fun newInstance(param1: String, param2: String) =
-            HomeFragment().apply {
-                arguments = Bundle().apply {
-                    putString(ARG_PARAM1, param1)
-                    putString(ARG_PARAM2, param2)
-                }
-            }
-    }
+    private fun batteryLabel(p: Int): String =
+        when {
+            p < 20 -> "🔴 Critical"
+            p < 40 -> "🟡 Low"
+            else -> "🟢 Healthy"
+        }
 }

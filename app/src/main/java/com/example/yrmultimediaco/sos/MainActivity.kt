@@ -23,6 +23,7 @@ import com.example.yrmultimediaco.sos.fragments.SOSFragment
 import com.example.yrmultimediaco.sos.fragments.StatusFragment
 import com.example.yrmultimediaco.sos.util.Logger
 import com.example.yrmultimediaco.sos.viewModels.SosViewModel
+import com.example.yrmultimediaco.sos.viewModels.StatusViewModel
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.material.bottomnavigation.BottomNavigationView
@@ -32,6 +33,7 @@ import com.google.gson.Gson
 class MainActivity : AppCompatActivity() {
     lateinit var meshManager: MeshManager
     private val sosViewModel: SosViewModel by viewModels()
+    private val statusViewModel: StatusViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -86,6 +88,10 @@ class MainActivity : AppCompatActivity() {
 
         meshManager.onAckReceived = { id ->
             sosViewModel.handleAck(id)
+        }
+
+        meshManager.onAckReceived = { id ->
+            statusViewModel.handleAck(id)
         }
 
     }

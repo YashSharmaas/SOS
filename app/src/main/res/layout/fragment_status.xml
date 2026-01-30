@@ -1,14 +1,81 @@
-<?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:context=".fragments.StatusFragment">
+    android:layout_height="match_parent">
 
-    <!-- TODO: Update blank fragment layout -->
-    <TextView
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:text="@string/hello_blank_fragment" />
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
 
-</FrameLayout>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Status Update/Requirement"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="16dp" />
+
+        <RadioGroup
+            android:id="@+id/radioLowGroup"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <RadioButton
+                android:id="@+id/rbSafe"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="I am Safe" />
+
+            <RadioButton
+                android:id="@+id/rbFood"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Need Food and Water" />
+
+            <RadioButton
+                android:id="@+id/rbClothes"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Clothes and Essentials" />
+
+            <RadioButton
+                android:id="@+id/rbRelocation"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Relocation Needed" />
+
+            <RadioButton
+                android:id="@+id/rbOther"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Other" />
+
+        </RadioGroup>
+
+        <EditText
+            android:id="@+id/etOther"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Describe emergency"
+            android:visibility="gone"
+            android:layout_marginTop="12dp" />
+
+        <Button
+            android:id="@+id/btnSendLOW"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="SEND STATUS"
+            android:layout_marginTop="24dp" />
+
+        <TextView
+            android:id="@+id/txtStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:layout_marginTop="12dp"
+            android:textStyle="bold" />
+
+    </LinearLayout>
+
+</ScrollView>
