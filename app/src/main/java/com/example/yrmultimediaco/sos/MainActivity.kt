@@ -7,8 +7,7 @@ import android.location.LocationManager
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
-import android.widget.Button
-import android.widget.TextView
+import androidx.activity.viewModels
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -22,6 +21,8 @@ import com.example.yrmultimediaco.sos.fragments.LogsFragment
 import com.example.yrmultimediaco.sos.fragments.ProfileFragment
 import com.example.yrmultimediaco.sos.fragments.SOSFragment
 import com.example.yrmultimediaco.sos.fragments.StatusFragment
+import com.example.yrmultimediaco.sos.util.Logger
+import com.example.yrmultimediaco.sos.viewModels.SosViewModel
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.material.bottomnavigation.BottomNavigationView
@@ -29,15 +30,13 @@ import com.google.gson.Gson
 
 
 class MainActivity : AppCompatActivity() {
-
     lateinit var meshManager: MeshManager
-    lateinit var util: Util
+    private val sosViewModel: SosViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        util = Util()
 
         setupBottomNav()
 
@@ -50,12 +49,13 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-
     private fun setupBottomNav() {
-        loadFragment(HomeFragment())
+        loadFragment(SOSFragment())
+        val bottomNav = findViewById<BottomNavigationView>(R.id.bottomNav)
 
-        findViewById<BottomNavigationView>(R.id.bottomNav)
-            .setOnItemSelectedListener {
+        bottomNav.selectedItemId = R.id.sos
+
+        bottomNav.setOnItemSelectedListener {
                 when (it.itemId) {
                     R.id.home -> loadFragment(HomeFragment())
                     R.id.status -> loadFragment(StatusFragment())
@@ -78,11 +78,16 @@ class MainActivity : AppCompatActivity() {
         if (::meshManager.isInitialized) return
 
         meshManager = MeshManager(this) { msg ->
-            Log.d("MESH", msg)
+            Logger.mesh(msg)
         }
 
         meshManager.start()
-        Log.d("MESH", "Mesh started from MainActivity")
+        Logger.mesh("Mesh started from MainActivity")
+
+        meshManager.onAckReceived = { id ->
+            sosViewModel.handleAck(id)
+        }
+
     }
 
     private val nearbyPermissions: Array<String>

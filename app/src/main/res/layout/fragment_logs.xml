@@ -1,14 +1,43 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".fragments.LogsFragment">
+    android:orientation="vertical"
+    android:padding="12dp">
 
-    <!-- TODO: Update blank fragment layout -->
+    <!-- Header -->
     <TextView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:text="@string/hello_blank_fragment" />
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Mesh Logs"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="8dp" />
 
-</FrameLayout>
+    <!-- Clear button -->
+    <Button
+        android:id="@+id/btnClearLogs"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Clear Logs"
+        android:layout_marginBottom="8dp"/>
+
+    <!-- Empty state -->
+    <TextView
+        android:id="@+id/txtEmpty"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="No logs yet…"
+        android:gravity="center"
+        android:padding="24dp"
+        android:visibility="gone" />
+
+    <!-- Log list -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/logsRecycler"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+</LinearLayout>

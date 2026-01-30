@@ -1,33 +1,121 @@
-<?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
+<!--<?xml version="1.0" encoding="utf-8"?>-->
+<!--<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"-->
+<!--    xmlns:tools="http://schemas.android.com/tools"-->
+<!--    android:layout_width="match_parent"-->
+<!--    android:layout_height="match_parent"-->
+<!--    tools:context=".fragments.SOSFragment">-->
+
+<!--    <LinearLayout-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="match_parent"-->
+<!--        android:orientation="vertical"-->
+<!--        android:gravity="center">-->
+
+<!--        <Button-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:id="@+id/btnSendSOS"-->
+<!--            android:text="Send SOS"/>-->
+
+<!--        <Button-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:id="@+id/btnSendLow"-->
+<!--            android:text="Send Low"/>-->
+
+<!--        <TextView-->
+<!--            android:id="@+id/txtLogs"-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="wrap_content"/>-->
+<!--    </LinearLayout>-->
+
+
+<!--</FrameLayout>-->
+
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:context=".fragments.SOSFragment">
+    android:layout_height="match_parent">
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:gravity="center">
-
-        <Button
-            android:layout_height="wrap_content"
-            android:layout_width="wrap_content"
-            android:id="@+id/btnSendSOS"
-            android:text="Send SOS"/>
-
-        <Button
-            android:layout_height="wrap_content"
-            android:layout_width="wrap_content"
-            android:id="@+id/btnSendLow"
-            android:text="Send Low"/>
+        android:padding="20dp">
 
         <TextView
-            android:id="@+id/txtLogs"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="EMERGENCY SOS"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="16dp" />
+
+        <RadioGroup
+            android:id="@+id/radioSOSGroup"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
+            android:layout_height="wrap_content">
+
+            <RadioButton
+                android:id="@+id/rbMedical"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Medical" />
+
+            <RadioButton
+                android:id="@+id/rbKidnapping"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Kidnapping" />
+
+            <RadioButton
+                android:id="@+id/rbFire"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Fire" />
+
+            <RadioButton
+                android:id="@+id/rbCollapse"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Building Collapse" />
+
+            <RadioButton
+                android:id="@+id/rbRiot"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Riot/Terror" />
+
+            <RadioButton
+                android:id="@+id/rbOther"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Other" />
+
+        </RadioGroup>
+
+        <EditText
+            android:id="@+id/etOther"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Describe emergency"
+            android:visibility="gone"
+            android:layout_marginTop="12dp" />
+
+        <Button
+            android:id="@+id/btnSendSOS"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="SEND SOS"
+            android:layout_marginTop="24dp" />
+
+        <TextView
+            android:id="@+id/txtStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:layout_marginTop="12dp"
+            android:textStyle="bold" />
+
     </LinearLayout>
 
-
-</FrameLayout>
+</ScrollView>

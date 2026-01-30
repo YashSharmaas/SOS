@@ -35,6 +35,7 @@ class MeshManager(
     private val seenPackets = mutableMapOf<String, Long>() // id -> expiredAt
     private val pendingPackets = mutableMapOf<String, Packet>() // id -> packet
     private val ackedPackets = mutableSetOf<String>() // SOS ids already ACKed
+    var onAckReceived: ((String?) -> Unit)? = null
     private val sendQueue = PriorityQueue<Packet>(
         compareBy<Packet> { it.priority }
             .thenBy { it.sourceTimeMillis }
@@ -138,6 +139,7 @@ class MeshManager(
 
                 if (packet.originalSenderId == endpointName) {
                     log("🎯 ORIGIN RECEIVED ACK — SOS SUCCESS")
+                    onAckReceived?.invoke(packet.targetPacketId)
                     pendingPackets.remove(packet.id)
                 } else {
                     pendingPackets[packet.id] = packet
@@ -217,7 +219,7 @@ class MeshManager(
         val ack = Packet(
             message = "ACK",
             priority = Priority.ACK,
-            expiredAt = now + ttlForPriority(Priority.ACK),
+            expiredAt = now + Util.ttlForPriority(Priority.ACK),
             sourceDevice = endpointName,
             originalSenderId = sos.sourceDevice,
             sourceTimeMillis = now,
@@ -290,7 +292,7 @@ class MeshManager(
     }
 
     private fun nextRebroadcastDelay(): Long {
-        if (pendingPackets.isEmpty()) return 60_000L
+        if (pendingPackets.isEmpty()) return 10_000L
 
         val now = System.currentTimeMillis()
         val youngest = pendingPackets.values.minOf { now - it.sourceTimeMillis }
@@ -306,7 +308,7 @@ class MeshManager(
         override fun run() {
             val now = System.currentTimeMillis()
             seenPackets.entries.removeIf { now > it.value }
-            handler.postDelayed(this, 60_000L)
+            handler.postDelayed(this, 10_000L)
         }
     }
 

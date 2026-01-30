@@ -1,6 +1,6 @@
 package com.example.yrmultimediaco.sos
 
-class Util {
+object Util {
     fun ttlForPriority(priority: Int): Long {
         return when (priority) {
             0 -> 10 * 60 * 1000L
