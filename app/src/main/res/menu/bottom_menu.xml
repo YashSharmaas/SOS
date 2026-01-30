@@ -1,0 +1,23 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item android:id="@+id/home"
+        android:title="Home"
+        android:icon="@drawable/ic_home"/>
+
+    <item android:id="@+id/status"
+        android:title="Status"
+        android:icon="@drawable/ic_status"/>
+
+    <item android:id="@+id/sos"
+        android:title="SOS"
+        android:icon="@drawable/ic_sos"/>
+
+    <item android:id="@+id/logs"
+        android:title="Logs"
+        android:icon="@drawable/ic_logs"/>
+
+    <item android:id="@+id/profile"
+        android:title="Profile"
+        android:icon="@drawable/ic_profile"/>
+
+</menu>
