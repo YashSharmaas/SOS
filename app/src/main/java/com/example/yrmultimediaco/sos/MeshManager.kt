@@ -100,7 +100,14 @@ class MeshManager(
     private val discoveryCallback = object : EndpointDiscoveryCallback() {
         override fun onEndpointFound(id: String, info: DiscoveredEndpointInfo) {
             log("FOUND endpoint: ${info.endpointName} ($id)")
-            client.requestConnection(endpointName, id, lifecycleCallback)
+
+            // Deterministic initiator rule
+            if (endpointName > info.endpointName) {
+                log("Initiating connection to ${info.endpointName}")
+                client.requestConnection(endpointName, id, lifecycleCallback)
+            } else {
+                log("Waiting for ${info.endpointName} to initiate")
+            }
         }
 
         override fun onEndpointLost(id: String) {
@@ -147,7 +154,7 @@ class MeshManager(
                 pendingPackets.remove(packet.targetPacketId)
 
                 if (packet.originalSenderId == endpointName) {
-                    log("🎯 ORIGIN RECEIVED ACK — SOS SUCCESS")
+                    log("🎯 ORIGIN RECEIVED ACK — SOS SUCCESS ")
                     onAckReceived?.invoke(packet.targetPacketId)
                     pendingPackets.remove(packet.id)
                 } else {

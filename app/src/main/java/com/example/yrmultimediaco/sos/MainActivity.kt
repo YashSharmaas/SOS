@@ -22,19 +22,10 @@ import com.example.yrmultimediaco.sos.fragments.ProfileFragment
 import com.example.yrmultimediaco.sos.fragments.SOSFragment
 import com.example.yrmultimediaco.sos.fragments.StatusFragment
 import com.example.yrmultimediaco.sos.util.Logger
-import com.example.yrmultimediaco.sos.viewModels.SosViewModel
-import com.example.yrmultimediaco.sos.viewModels.StatusViewModel
-import com.google.android.gms.location.FusedLocationProviderClient
-import com.google.android.gms.location.LocationServices
 import com.google.android.material.bottomnavigation.BottomNavigationView
-import com.google.gson.Gson
-
 
 class MainActivity : AppCompatActivity() {
     lateinit var meshManager: MeshManager
-    private val sosViewModel: SosViewModel by viewModels()
-    private val statusViewModel: StatusViewModel by viewModels()
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -85,15 +76,6 @@ class MainActivity : AppCompatActivity() {
 
         meshManager.start()
         Logger.mesh("Mesh started from MainActivity")
-
-        meshManager.onAckReceived = { id ->
-            sosViewModel.handleAck(id)
-        }
-
-        meshManager.onAckReceived = { id ->
-            statusViewModel.handleAck(id)
-        }
-
     }
 
     private val nearbyPermissions: Array<String>
@@ -103,14 +85,15 @@ class MainActivity : AppCompatActivity() {
                 Manifest.permission.BLUETOOTH_CONNECT,
                 Manifest.permission.NEARBY_WIFI_DEVICES,
                 Manifest.permission.ACCESS_FINE_LOCATION,
-                Manifest.permission.ACCESS_COARSE_LOCATION
+                Manifest.permission.ACCESS_COARSE_LOCATION,
+                Manifest.permission.BLUETOOTH_ADVERTISE
             )
         } else {
             arrayOf(
                 Manifest.permission.ACCESS_FINE_LOCATION,
                 Manifest.permission.ACCESS_COARSE_LOCATION,
                 Manifest.permission.BLUETOOTH,
-                Manifest.permission.BLUETOOTH_ADMIN
+                Manifest.permission.BLUETOOTH_ADMIN,
             )
         }
 

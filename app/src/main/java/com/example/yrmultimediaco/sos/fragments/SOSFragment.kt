@@ -54,6 +54,10 @@ class SOSFragment : Fragment(R.layout.fragment_s_o_s) {
             if (it != null) radioGroup.check(it)
         }
 
+        meshManager.onAckReceived = { id ->
+            sosVM.handleAck(id)
+        }
+
         sosVM.otherText.observe(viewLifecycleOwner) {
             otherField.setText(it ?: "")
         }
@@ -90,7 +94,7 @@ class SOSFragment : Fragment(R.layout.fragment_s_o_s) {
             meshManager.send(packet)
 
             sosVM.isSending.value = true
-            sosVM.statusText.value = "📡 Hopping through mesh..."
+            sosVM.statusText.value = "📡 Hopping through mesh... "
             Logger.mesh("[SENT] SOS")
         }
     }

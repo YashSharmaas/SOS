@@ -79,6 +79,9 @@ class StatusFragment : Fragment(R.layout.fragment_status) {
             statusVM.otherText.value = it.toString()
         }
 
+        meshManager.onAckReceived = { id ->
+            statusVM.handleAck(id)
+        }
 
         sendBtn.setOnClickListener {
 
