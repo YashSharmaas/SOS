@@ -1,6 +1,7 @@
-package com.example.yrmultimediaco.sos
+package com.example.yrmultimediaco.sos.data
 
 import android.os.Build
+import com.example.yrmultimediaco.sos.PacketType
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -18,6 +19,8 @@ data class Packet(
     val lat: Double? = null,         // nullable (GPS off case)
     val lng: Double? = null,
 
+    val payloadUserId: String,
+
     val sourceDevice: String = "${Build.MANUFACTURER}-${Build.MODEL}",
     val sourceTimeMillis: Long,
 
@@ -33,5 +36,3 @@ data class Packet(
 
     val originalSenderId: String? = null
 )
-
-

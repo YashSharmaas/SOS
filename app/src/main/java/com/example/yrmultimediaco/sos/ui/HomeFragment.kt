@@ -1,12 +1,8 @@
-package com.example.yrmultimediaco.sos.fragments
+package com.example.yrmultimediaco.sos.ui
 
-import android.content.Intent
 import android.os.Bundle
 import androidx.fragment.app.Fragment
-import android.view.LayoutInflater
 import android.view.View
-import android.provider.Settings
-import android.widget.Button
 import android.widget.TextView
 import com.example.yrmultimediaco.sos.MainActivity
 import com.example.yrmultimediaco.sos.R

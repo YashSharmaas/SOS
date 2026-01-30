@@ -1,4 +1,4 @@
-package com.example.yrmultimediaco.sos.fragments
+package com.example.yrmultimediaco.sos.ui
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -10,7 +10,7 @@ import androidx.core.app.ActivityCompat
 import androidx.fragment.app.Fragment
 import com.example.yrmultimediaco.sos.MainActivity
 import com.example.yrmultimediaco.sos.MeshManager
-import com.example.yrmultimediaco.sos.Packet
+import com.example.yrmultimediaco.sos.data.Packet
 import com.example.yrmultimediaco.sos.PacketType
 import com.example.yrmultimediaco.sos.Priority
 import com.example.yrmultimediaco.sos.R
@@ -19,9 +19,11 @@ import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import android.widget.RadioGroup
 import android.widget.EditText
+import android.widget.Toast
 import com.example.yrmultimediaco.sos.viewModels.SosViewModel
 import androidx.fragment.app.activityViewModels
 import androidx.core.widget.doAfterTextChanged
+import com.example.yrmultimediaco.sos.data.Prefs
 import com.example.yrmultimediaco.sos.util.Logger
 
 class SOSFragment : Fragment(R.layout.fragment_s_o_s) {
@@ -41,7 +43,8 @@ class SOSFragment : Fragment(R.layout.fragment_s_o_s) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        meshManager = (requireActivity() as MainActivity).meshManager
+        val activity = requireActivity() as MainActivity
+        meshManager = activity.meshManager
         fusedLocationClient =
             LocationServices.getFusedLocationProviderClient(requireContext())
 
@@ -83,20 +86,36 @@ class SOSFragment : Fragment(R.layout.fragment_s_o_s) {
             sosVM.otherText.value = it.toString()
         }
 
-
         sendBtn.setOnClickListener {
+            val activity = requireActivity() as MainActivity
+            // Check if initialized before using
+            if (activity.isMeshInitialized()) {
+                val message = buildSOSMessage() ?: return@setOnClickListener
+                val packet = createSOSPacket(message)
+                sosVM.lastPacketId = packet.id
 
-            val message = buildSOSMessage() ?: return@setOnClickListener
+                activity.meshManager.send(packet) // Access it here safely
 
-            val packet = createSOSPacket(message)
-            sosVM.lastPacketId = packet.id
-
-            meshManager.send(packet)
-
-            sosVM.isSending.value = true
-            sosVM.statusText.value = "📡 Hopping through mesh... "
-            Logger.mesh("[SENT] SOS")
+                sosVM.isSending.value = true
+                sosVM.statusText.value = "📡 Hopping through mesh... "
+                Logger.mesh("[SENT] SOS")
+            } else {
+                Toast.makeText(context, "Mesh not ready yet", Toast.LENGTH_SHORT).show()
+            }
         }
+//        sendBtn.setOnClickListener {
+//
+//            val message = buildSOSMessage() ?: return@setOnClickListener
+//
+//            val packet = createSOSPacket(message)
+//            sosVM.lastPacketId = packet.id
+//
+//            meshManager.send(packet)
+//
+//            sosVM.isSending.value = true
+//            sosVM.statusText.value = "📡 Hopping through mesh..."
+//            Logger.mesh("[SENT] SOS")
+//        }
     }
 
     private fun buildSOSMessage(): String? {
@@ -116,6 +135,7 @@ class SOSFragment : Fragment(R.layout.fragment_s_o_s) {
 
     private fun createSOSPacket(message: String): Packet {
         val time = System.currentTimeMillis()
+        val profile = Prefs(requireContext()).getUserProfile()!!
 
         return Packet(
             type = PacketType.SOS,
@@ -124,6 +144,7 @@ class SOSFragment : Fragment(R.layout.fragment_s_o_s) {
             expiredAt = time + Util.ttlForPriority(Priority.SOS),
             lat = currentLat,
             lng = currentLng,
+            payloadUserId = profile.userId,
             sourceTimeMillis = time
         )
     }

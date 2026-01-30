@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/onboardingScroll"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:background="#FFFFFF">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <TextView
+            android:id="@+id/txtTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Emergency Profile Setup"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:textColor="#000000"
+            android:layout_marginBottom="8dp" />
+
+        <TextView
+            android:id="@+id/txtSubtitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="This information will be shared during SOS situations"
+            android:textSize="14sp"
+            android:textColor="#666666"
+            android:layout_marginBottom="24dp" />
+
+        <EditText
+            android:id="@+id/edtName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Your Full Name *"
+            android:inputType="textPersonName"
+            android:layout_marginBottom="12dp" />
+
+        <EditText
+            android:id="@+id/edtPhone"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Your Phone Number *"
+            android:inputType="phone"
+            android:layout_marginBottom="12dp" />
+
+        <EditText
+            android:id="@+id/edtBloodGroup"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Blood Group (e.g. A+, O-) *"
+            android:inputType="text"
+            android:layout_marginBottom="12dp" />
+
+        <EditText
+            android:id="@+id/edtEmergencyName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Emergency Contact Name *"
+            android:inputType="textPersonName"
+            android:layout_marginBottom="12dp" />
+
+        <EditText
+            android:id="@+id/edtEmergencyPhone"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Emergency Contact Phone *"
+            android:inputType="phone"
+            android:layout_marginBottom="12dp" />
+
+        <EditText
+            android:id="@+id/edtSpecialAssistance"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Special Assistance (optional)"
+            android:inputType="textMultiLine"
+            android:minLines="2"
+            android:maxLines="3"
+            android:gravity="top"
+            android:layout_marginBottom="24dp" />
+
+        <Button
+            android:id="@+id/btnSaveProfile"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Save and Continue"
+            android:textAllCaps="false"
+            android:backgroundTint="#D32F2F"
+            android:textColor="#FFFFFF"
+            android:padding="14dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="* All fields except Special Assistance are mandatory"
+            android:textSize="12sp"
+            android:textColor="#888888"
+            android:layout_marginTop="12dp" />
+
+    </LinearLayout>
+
+</ScrollView>

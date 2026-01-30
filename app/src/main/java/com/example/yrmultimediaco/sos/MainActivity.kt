@@ -7,31 +7,30 @@ import android.location.LocationManager
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
-import androidx.activity.viewModels
 import android.widget.Toast
-import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
-import com.example.yrmultimediaco.sos.fragments.HomeFragment
-import com.example.yrmultimediaco.sos.fragments.LogsFragment
-import com.example.yrmultimediaco.sos.fragments.ProfileFragment
-import com.example.yrmultimediaco.sos.fragments.SOSFragment
-import com.example.yrmultimediaco.sos.fragments.StatusFragment
+import com.example.yrmultimediaco.sos.data.Prefs
+import com.example.yrmultimediaco.sos.ui.HomeFragment
+import com.example.yrmultimediaco.sos.ui.LogsFragment
+import com.example.yrmultimediaco.sos.ui.OnboardingFragment
+import com.example.yrmultimediaco.sos.ui.ProfileFragment
+import com.example.yrmultimediaco.sos.ui.SOSFragment
+import com.example.yrmultimediaco.sos.ui.StatusFragment
 import com.example.yrmultimediaco.sos.util.Logger
+import com.example.yrmultimediaco.sos.viewModels.SosViewModel
+import com.example.yrmultimediaco.sos.viewModels.StatusViewModel
 import com.google.android.material.bottomnavigation.BottomNavigationView
+
 
 class MainActivity : AppCompatActivity() {
     lateinit var meshManager: MeshManager
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-
-
-        setupBottomNav()
 
         if (!hasAllPermissions()) {
             requestNearbyPermissions()
@@ -40,6 +39,15 @@ class MainActivity : AppCompatActivity() {
         } else {
             startMesh()
         }
+
+        val prefs = Prefs(this)
+
+        if (!prefs.isProfileCompleted()) {
+            loadFragment(OnboardingFragment())
+            return
+        }
+
+        setupBottomNav()
     }
 
     private fun setupBottomNav() {

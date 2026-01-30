@@ -1,4 +1,4 @@
-package com.example.yrmultimediaco.sos.fragments
+package com.example.yrmultimediaco.sos.ui
 
 import android.os.Bundle
 import android.view.View

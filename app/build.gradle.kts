@@ -1,13 +1,17 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+    //alias(libs.plugins.ksp)
+
+
 }
 
 android {
     namespace = "com.example.yrmultimediaco.sos"
-    compileSdk {
-        version = release(36)
-    }
+    compileSdk = 36
+//    compileSdk {
+//        version = release(36)
+//    }
 
     defaultConfig {
         applicationId = "com.example.yrmultimediaco.sos"
@@ -35,6 +39,16 @@ android {
     kotlinOptions {
         jvmTarget = "11"
     }
+
+    //added by Yash  for Room
+    kapt {
+        correctErrorTypes = true
+        useBuildCache = false
+        arguments {
+            arg("room.schemaLocation", "$projectDir/schemas")
+            arg("room.incremental", "true")
+        }
+    }
 }
 
 dependencies {
@@ -43,6 +57,12 @@ dependencies {
     implementation(libs.material)
     implementation(libs.androidx.activity)
     implementation(libs.androidx.constraintlayout)
+
+    // Room dependencies
+    implementation("androidx.room:room-runtime:2.8.4")
+    kapt("androidx.room:room-compiler:2.6.1")
+    implementation("androidx.room:room-ktx:2.8.4") // Coroutine support
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

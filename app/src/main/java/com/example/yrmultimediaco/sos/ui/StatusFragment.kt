@@ -1,4 +1,4 @@
-package com.example.yrmultimediaco.sos.fragments
+package com.example.yrmultimediaco.sos.ui
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -10,7 +10,7 @@ import androidx.core.app.ActivityCompat
 import androidx.fragment.app.Fragment
 import com.example.yrmultimediaco.sos.MainActivity
 import com.example.yrmultimediaco.sos.MeshManager
-import com.example.yrmultimediaco.sos.Packet
+import com.example.yrmultimediaco.sos.data.Packet
 import com.example.yrmultimediaco.sos.PacketType
 import com.example.yrmultimediaco.sos.Priority
 import com.example.yrmultimediaco.sos.R
@@ -22,6 +22,7 @@ import android.widget.EditText
 import com.example.yrmultimediaco.sos.viewModels.StatusViewModel
 import androidx.fragment.app.activityViewModels
 import androidx.core.widget.doAfterTextChanged
+import com.example.yrmultimediaco.sos.data.Prefs
 import com.example.yrmultimediaco.sos.util.Logger
 
 class StatusFragment : Fragment(R.layout.fragment_status) {
@@ -114,6 +115,7 @@ class StatusFragment : Fragment(R.layout.fragment_status) {
 
     private fun createLOWPacket(message: String): Packet {
         val time = System.currentTimeMillis()
+        val profile = Prefs(requireContext()).getUserProfile()!!
 
         return Packet(
             type = PacketType.LOW_STATUS,
@@ -122,6 +124,7 @@ class StatusFragment : Fragment(R.layout.fragment_status) {
             expiredAt = time + Util.ttlForPriority(Priority.LOW),
             lat = currentLat,
             lng = currentLng,
+            payloadUserId = profile.userId,
             sourceTimeMillis = time
         )
     }

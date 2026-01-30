@@ -20,6 +20,9 @@ import com.google.gson.Gson
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
+import androidx.core.content.ContentProviderCompat.requireContext
+import com.example.yrmultimediaco.sos.data.Packet
+import com.example.yrmultimediaco.sos.data.Prefs
 import java.util.PriorityQueue
 
 
@@ -231,6 +234,7 @@ class MeshManager(
 
     private fun createAndStoreAck(sos: Packet) {
         val now = System.currentTimeMillis()
+        val profile = Prefs(context).getUserProfile()!!
 
         val ack = Packet(
             message = "ACK",
@@ -240,6 +244,7 @@ class MeshManager(
             originalSenderId = sos.sourceDevice,
             sourceTimeMillis = now,
             isAck = true,
+            payloadUserId = profile.userId,
             targetPacketId = sos.id
         )
 
