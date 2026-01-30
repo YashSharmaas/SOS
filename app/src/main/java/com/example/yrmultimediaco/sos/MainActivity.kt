@@ -213,7 +213,7 @@ class MainActivity : AppCompatActivity() {
             type = PacketType.SOS,
             message = "SOS EMERGENCY",
             priority = Priority.SOS,
-            expiredAt = time + util.ttlForPriority(Priority.SOS),
+            expiredAt = time + ttlForPriority(Priority.SOS),
             lat = lat,
             lng = lng,
             sourceTimeMillis = time
@@ -226,7 +226,7 @@ class MainActivity : AppCompatActivity() {
             type = PacketType.LOW_STATUS,
             message = "LOW",
             priority = Priority.LOW,
-            expiredAt = time + util.ttlForPriority(Priority.LOW),
+            expiredAt = time + ttlForPriority(Priority.LOW),
             sourceTimeMillis = time
         )
     }
@@ -303,7 +303,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     lateinit var meshManager: MeshManager
-    lateinit var util: Util
     lateinit var logView: TextView
 
     private fun startMesh() {

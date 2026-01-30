@@ -39,7 +39,6 @@ class MeshManager(
         compareBy<Packet> { it.priority }
             .thenBy { it.sourceTimeMillis }
     )
-    private val util: Util = Util()
     private val endpointName =
         "${Build.MANUFACTURER}-${Build.MODEL}".take(20)
 
@@ -218,7 +217,7 @@ class MeshManager(
         val ack = Packet(
             message = "ACK",
             priority = Priority.ACK,
-            expiredAt = now + util.ttlForPriority(Priority.ACK),
+            expiredAt = now + ttlForPriority(Priority.ACK),
             sourceDevice = endpointName,
             originalSenderId = sos.sourceDevice,
             sourceTimeMillis = now,
