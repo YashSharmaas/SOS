@@ -69,7 +69,7 @@ class OnboardingFragment : Fragment(R.layout.fragment_onboarding) {
 
     private fun navigateToHome() {
         requireActivity().supportFragmentManager.beginTransaction()
-            .replace(R.id.fragmentContainer, HomeFragment())
+            .replace(R.id.fragmentContainer, SOSFragment())
             .commit()
     }
 

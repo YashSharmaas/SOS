@@ -1,9 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-    //alias(libs.plugins.ksp)
-
-
+    alias(libs.plugins.kotlin.kapt)
 }
 
 android {
@@ -60,8 +58,8 @@ dependencies {
 
     // Room dependencies
     implementation("androidx.room:room-runtime:2.8.4")
-    kapt("androidx.room:room-compiler:2.6.1")
-    implementation("androidx.room:room-ktx:2.8.4") // Coroutine support
+    implementation("androidx.room:room-ktx:2.8.4")
+    kapt("androidx.room:room-compiler:2.8.4")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

@@ -89,7 +89,6 @@ class SOSFragment : Fragment(R.layout.fragment_s_o_s) {
         sendBtn.setOnClickListener {
             val activity = requireActivity() as MainActivity
             // Check if initialized before using
-            if (activity.isMeshInitialized()) {
                 val message = buildSOSMessage() ?: return@setOnClickListener
                 val packet = createSOSPacket(message)
                 sosVM.lastPacketId = packet.id
@@ -99,9 +98,6 @@ class SOSFragment : Fragment(R.layout.fragment_s_o_s) {
                 sosVM.isSending.value = true
                 sosVM.statusText.value = "📡 Hopping through mesh... "
                 Logger.mesh("[SENT] SOS")
-            } else {
-                Toast.makeText(context, "Mesh not ready yet", Toast.LENGTH_SHORT).show()
-            }
         }
 //        sendBtn.setOnClickListener {
 //
