@@ -76,6 +76,15 @@
             android:layout_marginTop="12dp"
             android:textStyle="bold" />
 
+        <TextView
+            android:id="@+id/txtEndpoints"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Endpoints"
+            android:textSize="14sp"
+            android:padding="12dp" />
+
+
     </LinearLayout>
 
 </ScrollView>

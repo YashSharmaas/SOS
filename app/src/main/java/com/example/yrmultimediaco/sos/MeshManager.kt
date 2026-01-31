@@ -58,14 +58,18 @@ class MeshManager(
         }
     }
 
+    val rssiTracker = BleRssiTracker()
+    private val bleScanner = BleScanner(context, rssiTracker)
+
     fun start() {
         startAdvertising()
         startDiscovery()
+
+        bleScanner.start()
+
         handler.post(rebroadcastTask)
         handler.post(cleanupTask)
-        connectivityManager.registerDefaultNetworkCallback(networkCallback)
         running = true
-        log("Mesh started")
     }
 
     fun connectedCount(): Int {
@@ -105,8 +109,12 @@ class MeshManager(
             log("FOUND endpoint: ${info.endpointName} ($id)")
 
             // Deterministic initiator rule
-            log("Initiating connection to ${info.endpointName}")
-            client.requestConnection(endpointName, id, lifecycleCallback)
+            if (endpointName > info.endpointName) {
+                log("Initiating connection to ${info.endpointName}")
+                client.requestConnection(endpointName, id, lifecycleCallback)
+            } else {
+                log("Waiting for ${info.endpointName} to initiate")
+            }
         }
 
         override fun onEndpointLost(id: String) {
@@ -338,9 +346,29 @@ class MeshManager(
     fun stop() {
         try {
             connectivityManager.unregisterNetworkCallback(networkCallback)
+            bleScanner.stop()
             running = false
         } catch (e: Exception) { }
     }
+
+
+    fun getDistance(endpointId: String): DistanceEstimate? {
+        val exactMatch = rssiTracker.getDistance(endpointId)
+        if (exactMatch != null) return exactMatch
+
+        val bestGuessId = rssiTracker.getMostLikelyDevice() ?: return null
+        return rssiTracker.getDistance(bestGuessId)
+    }
+
+    fun getLinkQuality(endpointId: String): LinkQuality? {
+        val exactMatch = rssiTracker.getQuality(endpointId)
+        if (exactMatch != null) return exactMatch
+
+        val bestGuessId = rssiTracker.getMostLikelyDevice() ?: return null
+        return rssiTracker.getQuality(bestGuessId)
+    }
+
+    fun connectedEndpoints(): Set<String> = peers.toSet()
 
 }
 

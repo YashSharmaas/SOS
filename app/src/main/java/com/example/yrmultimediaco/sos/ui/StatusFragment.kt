@@ -23,9 +23,13 @@ import com.example.yrmultimediaco.sos.viewModels.StatusViewModel
 import androidx.fragment.app.activityViewModels
 import androidx.core.widget.doAfterTextChanged
 import androidx.lifecycle.lifecycleScope
+import com.example.yrmultimediaco.sos.LinkQuality
 import com.example.yrmultimediaco.sos.data.Prefs
 import com.example.yrmultimediaco.sos.util.Logger
+import com.example.yrmultimediaco.sos.util.Logger.mesh
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -42,11 +46,34 @@ class StatusFragment : Fragment(R.layout.fragment_status) {
     private lateinit var otherField: EditText
     private lateinit var sendBtn: Button
     private lateinit var statusText: TextView
+    private var updateJob: Job? = null
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
         meshManager = (requireActivity() as MainActivity).meshManager
+        val txtEndpoints = view.findViewById<TextView>(R.id.txtEndpoints)
+
+        meshManager.connectedEndpoints().forEach { endpointId ->
+
+            val distance = meshManager.getDistance(endpointId)
+            val quality = meshManager.getLinkQuality(endpointId)
+
+            val distanceText =
+                distance?.let { "~${it.minMeters}-${it.maxMeters} m" } ?: "Measuring…"
+
+            val qualityText = when (quality) {
+                LinkQuality.EXCELLENT -> "🟢 Strong"
+                LinkQuality.GOOD -> "🟢 Stable"
+                LinkQuality.WEAK -> "🟡 Weak"
+                LinkQuality.CRITICAL -> "🔴 Move closer"
+                LinkQuality.LOST -> "⚫ Lost"
+                null -> "Measuring…"
+            }
+
+            txtEndpoints.text =
+                "Endpoint $endpointId\nDistance: $distanceText\nQuality: $qualityText"
+        }
         fusedLocationClient =
             LocationServices.getFusedLocationProviderClient(requireContext())
 
@@ -129,6 +156,58 @@ class StatusFragment : Fragment(R.layout.fragment_status) {
             }
             else -> null
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        startStatusUpdater()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        updateJob?.cancel()
+    }
+
+    private fun startStatusUpdater() {
+        updateJob = viewLifecycleOwner.lifecycleScope.launch {
+            while (true) {
+                updateEndpointStatus()
+                delay(1000)
+            }
+        }
+    }
+
+    private fun updateEndpointStatus() {
+        val txtEndpoints = view?.findViewById<TextView>(R.id.txtEndpoints) ?: return
+        val sb = StringBuilder()
+
+        val connectedPeers = meshManager.connectedEndpoints()
+
+        if (connectedPeers.isEmpty()) {
+            txtEndpoints.text = "No active endpoints."
+            return
+        }
+
+        connectedPeers.forEach { endpointId ->
+            // PROBLEM: endpointId (Nearby) != deviceAddress (BLE)
+            // See Step 2 below for the logic fix
+            val distance = meshManager.getDistance(endpointId)
+            val quality = meshManager.getLinkQuality(endpointId)
+
+            val distanceText = distance?.let { "~${it.minMeters}-${it.maxMeters} m" } ?: "Measuring…"
+            val qualityText = when (quality) {
+                LinkQuality.EXCELLENT -> "🟢 Strong"
+                LinkQuality.GOOD -> "🟢 Stable"
+                LinkQuality.WEAK -> "🟡 Weak"
+                LinkQuality.CRITICAL -> "🔴 Move closer"
+                LinkQuality.LOST -> "⚫ Lost"
+                null -> "Measuring…"
+            }
+
+            sb.append("Endpoint $endpointId\nDistance: $distanceText\nQuality: $qualityText\n\n")
+        }
+
+        txtEndpoints.text = sb.toString()
     }
 
     private fun createLOWPacket(message: String): Packet {
