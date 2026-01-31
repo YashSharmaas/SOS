@@ -23,8 +23,12 @@ import android.widget.Toast
 import com.example.yrmultimediaco.sos.viewModels.SosViewModel
 import androidx.fragment.app.activityViewModels
 import androidx.core.widget.doAfterTextChanged
+import androidx.lifecycle.lifecycleScope
 import com.example.yrmultimediaco.sos.data.Prefs
 import com.example.yrmultimediaco.sos.util.Logger
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class SOSFragment : Fragment(R.layout.fragment_s_o_s) {
 
@@ -71,8 +75,11 @@ class SOSFragment : Fragment(R.layout.fragment_s_o_s) {
             sosVM.handleAck(id)
         }
 
-        sosVM.otherText.observe(viewLifecycleOwner) {
-            otherField.setText(it ?: "")
+//        sosVM.otherText.observe(viewLifecycleOwner) {
+//            otherField.setText(it ?: "")
+//        }
+        otherField.doAfterTextChanged {
+            sosVM.otherText.value = it?.toString()
         }
 
         sosVM.statusText.observe(viewLifecycleOwner) {
@@ -88,8 +95,14 @@ class SOSFragment : Fragment(R.layout.fragment_s_o_s) {
 
         radioGroup.setOnCheckedChangeListener { _, id ->
             sosVM.selectedType.value = id
-            otherField.visibility =
-                if (id == R.id.rbOther) View.VISIBLE else View.GONE
+
+            if (id == R.id.rbOther) {
+                otherField.visibility = View.VISIBLE
+            } else {
+                otherField.visibility = View.GONE
+                otherField.text?.clear()
+                sosVM.otherText.value = null
+            }
         }
 
         otherField.doAfterTextChanged {
@@ -99,15 +112,22 @@ class SOSFragment : Fragment(R.layout.fragment_s_o_s) {
         sendBtn.setOnClickListener {
             val activity = requireActivity() as MainActivity
             // Check if initialized before using
-                val message = buildSOSMessage() ?: return@setOnClickListener
-                val packet = createSOSPacket(message)
-                sosVM.lastPacketId = packet.id
+            val message = buildSOSMessage() ?: return@setOnClickListener
+            //val packet = createSOSPacket(message)
 
+            sendBtn.isEnabled = false
+
+            viewLifecycleOwner.lifecycleScope.launch {
+                val packet = withContext(Dispatchers.Default) {
+                    createSOSPacket(message)
+                }
                 activity.meshManager.send(packet) // Access it here safely
 
-                sosVM.isSending.value = true
-                sosVM.statusText.value = "📡 Hopping through mesh... "
+                sosVM.lastPacketId = packet.id
+                sosVM.isSending.postValue(true)
+                sosVM.statusText.postValue("📡 Hopping through mesh...")
                 Logger.mesh("[SENT] SOS")
+            }
         }
 //        sendBtn.setOnClickListener {
 //

@@ -22,8 +22,12 @@ import android.widget.EditText
 import com.example.yrmultimediaco.sos.viewModels.StatusViewModel
 import androidx.fragment.app.activityViewModels
 import androidx.core.widget.doAfterTextChanged
+import androidx.lifecycle.lifecycleScope
 import com.example.yrmultimediaco.sos.data.Prefs
 import com.example.yrmultimediaco.sos.util.Logger
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class StatusFragment : Fragment(R.layout.fragment_status) {
 
@@ -55,8 +59,11 @@ class StatusFragment : Fragment(R.layout.fragment_status) {
             if (it != null) radioGroup.check(it)
         }
 
-        statusVM.otherText.observe(viewLifecycleOwner) {
-            otherField.setText(it ?: "")
+//        statusVM.otherText.observe(viewLifecycleOwner) {
+//            otherField.setText(it ?: "")
+//        }
+        otherField.doAfterTextChanged {
+            statusVM.otherText.value = it?.toString()
         }
 
         statusVM.statusText.observe(viewLifecycleOwner) {
@@ -72,8 +79,14 @@ class StatusFragment : Fragment(R.layout.fragment_status) {
 
         radioGroup.setOnCheckedChangeListener { _, id ->
             statusVM.selectedType.value = id
-            otherField.visibility =
-                if (id == R.id.rbOther) View.VISIBLE else View.GONE
+
+            if (id == R.id.rbOther) {
+                otherField.visibility = View.VISIBLE
+            } else {
+                otherField.visibility = View.GONE
+                otherField.text?.clear()
+                statusVM.otherText.value = null
+            }
         }
 
         otherField.doAfterTextChanged {
@@ -87,15 +100,20 @@ class StatusFragment : Fragment(R.layout.fragment_status) {
         sendBtn.setOnClickListener {
 
             val message = buildLOWMessage() ?: return@setOnClickListener
+            sendBtn.isEnabled = false
 
-            val packet = createLOWPacket(message)
-            statusVM.lastPacketId = packet.id
+            viewLifecycleOwner.lifecycleScope.launch {
+                val packet = withContext(Dispatchers.Default) {
+                    createLOWPacket(message)
+                }
 
-            meshManager.send(packet)
+                meshManager.send(packet)
 
-            statusVM.isSending.value = true
-            statusVM.statusText.value = "📡 Hopping through mesh..."
-            Logger.mesh("[SENT] STATUS")
+                statusVM.lastPacketId = packet.id
+                statusVM.isSending.postValue(true)
+                statusVM.statusText.postValue("📡 Hopping through mesh...")
+                Logger.mesh("[SENT] STATUS")
+            }
         }
     }
 
