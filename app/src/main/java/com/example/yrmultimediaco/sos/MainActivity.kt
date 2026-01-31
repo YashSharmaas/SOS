@@ -2,6 +2,7 @@ package com.example.yrmultimediaco.sos
 
 import android.Manifest
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.LocationManager
 import android.os.Build
@@ -9,10 +10,12 @@ import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.viewModels
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
 import com.example.yrmultimediaco.sos.data.Prefs
 import com.example.yrmultimediaco.sos.ui.HomeFragment
 import com.example.yrmultimediaco.sos.ui.LogsFragment
@@ -21,33 +24,79 @@ import com.example.yrmultimediaco.sos.ui.ProfileFragment
 import com.example.yrmultimediaco.sos.ui.SOSFragment
 import com.example.yrmultimediaco.sos.ui.StatusFragment
 import com.example.yrmultimediaco.sos.util.Logger
+import com.example.yrmultimediaco.sos.viewModels.ProfileViewModel
 import com.example.yrmultimediaco.sos.viewModels.SosViewModel
 import com.example.yrmultimediaco.sos.viewModels.StatusViewModel
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import kotlin.properties.Delegates
 
 
 class MainActivity : AppCompatActivity() {
     lateinit var meshManager: MeshManager
+
+    private var hasUnsavedChanges = false
+
+    fun setUnsavedChanges(value: Boolean) {
+        hasUnsavedChanges = value
+    }
+
+    fun hasUnsavedChanges(): Boolean = hasUnsavedChanges
+
+    fun showUnsavedDialog(
+        onSave: () -> Unit,
+        onDiscard: () -> Unit
+    ) {
+        AlertDialog.Builder(this)
+            .setTitle("Unsaved Changes")
+            .setMessage("You have unsaved changes. Do you want to save them?")
+            .setPositiveButton("Save") { _, _ -> onSave() }
+            .setNegativeButton("Discard") { _, _ -> onDiscard() }
+            .setCancelable(false)
+            .show()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
-
-        if (!hasAllPermissions()) {
-            requestNearbyPermissions()
-        } else if (!isLocationEnabled()) {
-            Toast.makeText(this, "Turn ON Location", Toast.LENGTH_LONG).show()
-        } else {
-            startMesh()
-        }
 
         val prefs = Prefs(this)
 
         if (!prefs.isProfileCompleted()) {
-            loadFragment(OnboardingFragment())
+            startActivity(Intent(this, OnBoardingActivity::class.java))
+            finish()
             return
         }
 
+        setContentView(R.layout.activity_main)
+
+        initMesh()
+
         setupBottomNav()
+    }
+
+    fun getMeshManagerSafely(): MeshManager? {
+        return try {
+            if (::meshManager.isInitialized) {
+                meshManager
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    private fun initMesh() {
+        if (!hasAllPermissions()) {
+            requestNearbyPermissions()
+            return
+        }
+
+        if (!isLocationEnabled()) {
+            Toast.makeText(this, "Turn ON Location", Toast.LENGTH_LONG).show()
+            return
+        }
+
+        startMesh()
     }
 
     private fun setupBottomNav() {
@@ -56,16 +105,36 @@ class MainActivity : AppCompatActivity() {
 
         bottomNav.selectedItemId = R.id.sos
 
-        bottomNav.setOnItemSelectedListener {
-                when (it.itemId) {
-                    R.id.home -> loadFragment(HomeFragment())
-                    R.id.status -> loadFragment(StatusFragment())
-                    R.id.sos -> loadFragment(SOSFragment())
-                    R.id.logs -> loadFragment(LogsFragment())
-                    R.id.profile -> loadFragment(ProfileFragment())
-                }
-                true
+        bottomNav.setOnItemSelectedListener { item ->
+
+            if (hasUnsavedChanges) {
+                showUnsavedDialog(
+                    onSave = {
+                        supportFragmentManager.fragments
+                            .filterIsInstance<ProfileFragment>()
+                            .firstOrNull()
+                            ?.saveProfile()
+
+                        hasUnsavedChanges = false
+                        bottomNav.selectedItemId = item.itemId
+                    },
+                    onDiscard = {
+                        hasUnsavedChanges = false
+                        bottomNav.selectedItemId = item.itemId
+                    }
+                )
+                return@setOnItemSelectedListener false
             }
+
+            when (item.itemId) {
+                R.id.home -> loadFragment(HomeFragment())
+                R.id.status -> loadFragment(StatusFragment())
+                R.id.sos -> loadFragment(SOSFragment())
+                R.id.logs -> loadFragment(LogsFragment())
+                R.id.profile -> loadFragment(ProfileFragment())
+            }
+            true
+        }
     }
 
     private fun loadFragment(fragment: Fragment) {
@@ -138,6 +207,18 @@ class MainActivity : AppCompatActivity() {
             ).show()
         }
     }
+
+    fun canNavigateAway(): Boolean {
+        val frag = supportFragmentManager
+            .findFragmentById(R.id.fragmentContainer)
+
+        if (frag is ProfileFragment) {
+            val vm by frag.viewModels<ProfileViewModel>()
+            return vm.hasUnsavedChanges.value != true
+        }
+        return true
+    }
+
 
     override fun onDestroy() {
         super.onDestroy()

@@ -1,14 +1,100 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/profileRoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".ui.ProfileFragment">
+    android:padding="16dp">
 
-    <!-- TODO: Update blank fragment layout -->
-    <TextView
+    <LinearLayout
+        android:orientation="vertical"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:text="@string/hello_blank_fragment" />
+        android:layout_height="wrap_content">
 
-</FrameLayout>
+
+        <!-- HEADER -->
+        <TextView
+            android:text="Your Profile"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="16dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
+        <!-- NAME -->
+        <EditText
+            android:id="@+id/edtName"
+            android:hint="Full Name"
+            android:enabled="false"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+
+        <!-- PHONE -->
+        <EditText
+            android:id="@+id/edtPhone"
+            android:hint="Phone Number"
+            android:inputType="phone"
+            android:enabled="false"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+
+        <!-- BLOOD GROUP -->
+        <EditText
+            android:id="@+id/edtBloodGroup"
+            android:hint="Blood Group"
+            android:enabled="false"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+
+        <!-- SPECIAL ASSISTANCE -->
+        <EditText
+            android:id="@+id/edtAssistance"
+            android:hint="Special Assistance (optional)"
+            android:minLines="2"
+            android:enabled="false"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+
+        <!-- EMERGENCY CONTACT NAME -->
+        <EditText
+            android:id="@+id/edtEmergencyName"
+            android:hint="Emergency Contact Name"
+            android:enabled="false"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+
+        <!-- EMERGENCY CONTACT PHONE -->
+        <EditText
+            android:id="@+id/edtEmergencyPhone"
+            android:hint="Emergency Contact Phone"
+            android:inputType="phone"
+            android:enabled="false"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+
+        <!-- ACTION BUTTONS -->
+        <LinearLayout
+            android:orientation="horizontal"
+            android:gravity="end"
+            android:layout_marginTop="20dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <Button
+                android:id="@+id/btnCancel"
+                android:text="Cancel"
+                android:enabled="false"
+                android:layout_marginEnd="8dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+
+            <Button
+                android:id="@+id/btnSave"
+                android:text="Save"
+                android:enabled="false"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+
+        </LinearLayout>
+
+    </LinearLayout>
+</ScrollView>

@@ -1,60 +1,169 @@
 package com.example.yrmultimediaco.sos.ui
 
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
+import android.widget.EditText
+import android.widget.ImageButton
+import androidx.core.widget.addTextChangedListener
+import androidx.fragment.app.viewModels
+import androidx.lifecycle.lifecycleScope
+import com.example.yrmultimediaco.sos.MainActivity
 import com.example.yrmultimediaco.sos.R
+import com.example.yrmultimediaco.sos.data.UserProfileEntity
+import com.example.yrmultimediaco.sos.db.AppDatabase
+import com.example.yrmultimediaco.sos.viewModels.ProfileViewModel
+import kotlinx.coroutines.launch
 
-// TODO: Rename parameter arguments, choose names that match
-// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-private const val ARG_PARAM1 = "param1"
-private const val ARG_PARAM2 = "param2"
+class ProfileFragment : Fragment(R.layout.fragment_profile) {
 
-/**
- * A simple [Fragment] subclass.
- * Use the [ProfileFragment.newInstance] factory method to
- * create an instance of this fragment.
- */
-class ProfileFragment : Fragment() {
-    // TODO: Rename and change types of parameters
-    private var param1: String? = null
-    private var param2: String? = null
+    private lateinit var edtName: EditText
+    private lateinit var edtPhone: EditText
+    private lateinit var edtBlood: EditText
+    private lateinit var edtAssist: EditText
+    private lateinit var edtEmerName: EditText
+    private lateinit var edtEmerPhone: EditText
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        arguments?.let {
-            param1 = it.getString(ARG_PARAM1)
-            param2 = it.getString(ARG_PARAM2)
+    private lateinit var btnSave: Button
+    private lateinit var btnCancel: Button
+
+    private var originalProfile: UserProfileEntity? = null
+    private var isDirty = false
+    private lateinit var actionLayout: View
+    private lateinit var btnEdit: ImageButton
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+//        btnEdit = view.findViewById(R.id.btnEdit)
+//        actionLayout = view.findViewById(R.id.actionLayout)
+
+        bindViews(view)
+        fetchProfile()
+        setupListeners()
+
+//        btnEdit.setOnClickListener {
+//            enableEditMode(true)
+//        }
+    }
+
+    private fun bindViews(view: View) {
+        edtName = view.findViewById(R.id.edtName)
+        edtPhone = view.findViewById(R.id.edtPhone)
+        edtBlood = view.findViewById(R.id.edtBloodGroup)
+        edtAssist = view.findViewById(R.id.edtAssistance)
+        edtEmerName = view.findViewById(R.id.edtEmergencyName)
+        edtEmerPhone = view.findViewById(R.id.edtEmergencyPhone)
+
+        btnSave = view.findViewById(R.id.btnSave)
+        btnCancel = view.findViewById(R.id.btnCancel)
+    }
+
+    private fun fetchProfile() {
+        lifecycleScope.launch {
+            val profile = AppDatabase
+                .getInstance(requireContext())
+                .userDao()
+                .getProfile()
+
+            profile?.let {
+                originalProfile = it
+                fillData(it)
+            }
         }
     }
 
-    override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
-        // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_profile, container, false)
+    private fun fillData(profile: UserProfileEntity) {
+        edtName.setText(profile.name)
+        edtPhone.setText(profile.phoneNumber)
+        edtBlood.setText(profile.bloodGroup)
+        edtAssist.setText(profile.specialAssistance)
+        edtEmerName.setText(profile.emergencyContactName)
+        edtEmerPhone.setText(profile.emergencyContactNumber)
     }
 
-    companion object {
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         *
-         * @param param1 Parameter 1.
-         * @param param2 Parameter 2.
-         * @return A new instance of fragment ProfileFragment.
-         */
-        // TODO: Rename and change types and number of parameters
-        @JvmStatic
-        fun newInstance(param1: String, param2: String) =
-            ProfileFragment().apply {
-                arguments = Bundle().apply {
-                    putString(ARG_PARAM1, param1)
-                    putString(ARG_PARAM2, param2)
-                }
+    private fun setupListeners() {
+
+        val fields = listOf(
+            edtName, edtPhone, edtBlood,
+            edtAssist, edtEmerName, edtEmerPhone
+        )
+
+        fields.forEach { editText ->
+            editText.setOnClickListener {
+                enableEditMode()
             }
+
+            editText.addTextChangedListener {
+                markDirty()
+            }
+        }
+
+        btnSave.setOnClickListener {
+            saveProfile()
+        }
+
+        btnCancel.setOnClickListener {
+            originalProfile?.let {
+                fillData(it)
+            }
+            disableEditMode()
+        }
+    }
+
+    private fun enableEditMode() {
+        listOf(
+            edtName, edtPhone, edtBlood,
+            edtAssist, edtEmerName, edtEmerPhone
+        ).forEach { it.isEnabled = true }
+    }
+
+    private fun disableEditMode() {
+        listOf(
+            edtName, edtPhone, edtBlood,
+            edtAssist, edtEmerName, edtEmerPhone
+        ).forEach { it.isEnabled = false }
+
+        btnSave.isEnabled = false
+        btnCancel.isEnabled = false
+        isDirty = false
+    }
+
+    private fun markDirty() {
+        isDirty = true
+        btnSave.isEnabled = true
+        btnCancel.isEnabled = true
+
+        (requireActivity() as? MainActivity)
+            ?.setUnsavedChanges(true)
+    }
+
+    fun saveProfile() {
+        val updated = UserProfileEntity(
+           // userId = originalProfile?.userId ?: 0,
+            name = edtName.text.toString(),
+            phoneNumber = edtPhone.text.toString(),
+            bloodGroup = edtBlood.text.toString(),
+            specialAssistance = edtAssist.text.toString(),
+            emergencyContactName = edtEmerName.text.toString(),
+            emergencyContactNumber = edtEmerPhone.text.toString()
+        )
+
+        lifecycleScope.launch {
+            AppDatabase.getInstance(requireContext())
+                .userDao()
+                .insertOrUpdate(updated)
+
+            originalProfile = updated
+            disableEditMode()
+
+            (requireActivity() as? MainActivity)
+                ?.setUnsavedChanges(false)
+        }
     }
 }

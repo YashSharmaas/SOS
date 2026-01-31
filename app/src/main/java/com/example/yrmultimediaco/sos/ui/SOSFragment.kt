@@ -43,8 +43,18 @@ class SOSFragment : Fragment(R.layout.fragment_s_o_s) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val activity = requireActivity() as MainActivity
-        meshManager = activity.meshManager
+        val activity = activity as? MainActivity
+        val meshManager = activity?.getMeshManagerSafely()
+
+        if (meshManager == null) {
+            Toast.makeText(
+                requireContext(),
+                "Mesh is initializing, please wait…",
+                Toast.LENGTH_SHORT
+            ).show()
+            return
+        }
+
         fusedLocationClient =
             LocationServices.getFusedLocationProviderClient(requireContext())
 
