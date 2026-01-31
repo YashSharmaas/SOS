@@ -105,12 +105,8 @@ class MeshManager(
             log("FOUND endpoint: ${info.endpointName} ($id)")
 
             // Deterministic initiator rule
-            if (endpointName > info.endpointName) {
-                log("Initiating connection to ${info.endpointName}")
-                client.requestConnection(endpointName, id, lifecycleCallback)
-            } else {
-                log("Waiting for ${info.endpointName} to initiate")
-            }
+            log("Initiating connection to ${info.endpointName}")
+            client.requestConnection(endpointName, id, lifecycleCallback)
         }
 
         override fun onEndpointLost(id: String) {
@@ -217,7 +213,7 @@ class MeshManager(
 
         // 3. Deliver all undelivered SOS packets
         pendingPackets.values
-            .filter { it.priority == Priority.SOS }
+            .filter { it.priority != Priority.ACK }
             .toList()
             .forEach { sos ->
                 if (ackedPackets.contains(sos.id)) return@forEach
@@ -225,16 +221,22 @@ class MeshManager(
                 log("🌐 GATEWAY delivering ${sos.id}")
 
                 // deliverToInternet(sos)
-
-                createAndStoreAck(sos)
-                ackedPackets.add(sos.id)
+                if(sos.sourceDevice == endpointName) {
+                    log("🎯 ORIGIN DELIVERED SOS")
+                    onAckReceived?.invoke(sos.id)
+                } else {
+                    createAndStoreAck(sos)
+                    ackedPackets.add(sos.id)
+                }
                 pendingPackets.remove(sos.id)
             }
     }
 
     private fun createAndStoreAck(sos: Packet) {
         val now = System.currentTimeMillis()
-        val profile = Prefs(context).getUserProfile()!!
+        val profile = Prefs(context).getUserProfile()
+
+        val userId: String = profile?.userId ?: "dummy_user_id"
 
         val ack = Packet(
             message = "ACK",
@@ -244,7 +246,7 @@ class MeshManager(
             originalSenderId = sos.sourceDevice,
             sourceTimeMillis = now,
             isAck = true,
-            payloadUserId = profile.userId,
+            payloadUserId = userId,
             targetPacketId = sos.id
         )
 

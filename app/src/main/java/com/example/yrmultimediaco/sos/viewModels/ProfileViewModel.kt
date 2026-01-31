@@ -18,8 +18,8 @@ class ProfileViewModel(
 
     private var originalProfile: UserProfileEntity? = null
 
-    private val _profile = MutableLiveData<UserProfileEntity>()
-    val profile: LiveData<UserProfileEntity> = _profile
+    private val _profile = MutableLiveData<UserProfileEntity?>()
+    val profile: LiveData<UserProfileEntity?> = _profile
 
     private val _hasUnsavedChanges = MutableLiveData(false)
     val hasUnsavedChanges: LiveData<Boolean> = _hasUnsavedChanges

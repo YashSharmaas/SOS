@@ -47,7 +47,7 @@ class StatusFragment : Fragment(R.layout.fragment_status) {
             LocationServices.getFusedLocationProviderClient(requireContext())
 
         radioGroup = view.findViewById(R.id.radioLowGroup)
-        otherField = view.findViewById(R.id.etOther)
+        otherField = view.findViewById<EditText>(R.id.etOther)
         sendBtn = view.findViewById(R.id.btnSendLOW)
         statusText = view.findViewById(R.id.txtStatus)
 
@@ -115,7 +115,8 @@ class StatusFragment : Fragment(R.layout.fragment_status) {
 
     private fun createLOWPacket(message: String): Packet {
         val time = System.currentTimeMillis()
-        val profile = Prefs(requireContext()).getUserProfile()!!
+        val profile = Prefs(requireContext()).getUserProfile()
+        val userId: String = profile?.userId ?: "dummy_user_id"
 
         return Packet(
             type = PacketType.LOW_STATUS,
@@ -124,7 +125,7 @@ class StatusFragment : Fragment(R.layout.fragment_status) {
             expiredAt = time + Util.ttlForPriority(Priority.LOW),
             lat = currentLat,
             lng = currentLng,
-            payloadUserId = profile.userId,
+            payloadUserId = userId,
             sourceTimeMillis = time
         )
     }

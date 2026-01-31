@@ -19,7 +19,7 @@ data class Packet(
     val lat: Double? = null,         // nullable (GPS off case)
     val lng: Double? = null,
 
-    val payloadUserId: String,
+    val payloadUserId: String?,
 
     val sourceDevice: String = "${Build.MANUFACTURER}-${Build.MODEL}",
     val sourceTimeMillis: Long,

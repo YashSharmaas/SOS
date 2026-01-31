@@ -141,7 +141,8 @@ class SOSFragment : Fragment(R.layout.fragment_s_o_s) {
 
     private fun createSOSPacket(message: String): Packet {
         val time = System.currentTimeMillis()
-        val profile = Prefs(requireContext()).getUserProfile()!!
+        val profile = Prefs(requireContext()).getUserProfile()
+        val userId: String = profile?.userId ?: "dummy_user_id"
 
         return Packet(
             type = PacketType.SOS,
@@ -150,7 +151,7 @@ class SOSFragment : Fragment(R.layout.fragment_s_o_s) {
             expiredAt = time + Util.ttlForPriority(Priority.SOS),
             lat = currentLat,
             lng = currentLng,
-            payloadUserId = profile.userId,
+            payloadUserId = userId,
             sourceTimeMillis = time
         )
     }
